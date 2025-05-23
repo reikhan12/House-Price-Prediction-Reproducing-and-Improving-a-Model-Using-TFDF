@@ -52,3 +52,4 @@ p_hist <- ggplot(num_long, aes(x = Value)) +
   ggtitle("Histograms of Numerical Variables")
 
 print(p_hist)
+# Reviewed by Reikhan Gurbanova on May 22
