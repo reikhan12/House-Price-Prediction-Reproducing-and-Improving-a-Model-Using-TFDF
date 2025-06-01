@@ -262,3 +262,29 @@ for (col in factor_names) {
   }
 }
 
+# Remove any columns that have only one level (these cause the contrasts error)
+test_processed_clean <- test_processed[, sapply(test_processed, function(x) {
+  if(is.factor(x)) {
+    return(nlevels(x) > 1)
+  } else {
+    return(TRUE)
+  }
+})]
+
+# Now create the model matrix
+test_matrix <- model.matrix(~ ., data = test_processed_clean)[, -1]
+
+# Ensure test matrix has same columns as training matrix
+missing_cols <- setdiff(colnames(train_matrix), colnames(test_matrix))
+for (col in missing_cols) {
+  test_matrix <- cbind(test_matrix, 0)
+  colnames(test_matrix)[ncol(test_matrix)] <- col
+}
+
+# Remove extra columns and reorder
+common_cols <- intersect(colnames(test_matrix), colnames(train_matrix))
+test_matrix <- test_matrix[, common_cols]
+
+# Ensure same column order as training matrix
+test_matrix <- test_matrix[, colnames(train_matrix)[colnames(train_matrix) %in% colnames(test_matrix)]]
+
