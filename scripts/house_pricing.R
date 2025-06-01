@@ -226,5 +226,39 @@ common_features <- intersect(names(train_processed), names(test_processed))
 train_processed <- train_processed[, c(common_features, "SalePrice")]
 test_processed <- test_processed[, common_features]
 
+# =============================================================================
+# PREPARE DATA FOR MODELING
+# =============================================================================
 
+# Split training data
+set.seed(42)
+train_index <- createDataPartition(train_processed$SalePrice, p = 0.7, list = FALSE)
+train_set <- train_processed[train_index, ]
+valid_set <- train_processed[-train_index, ]
+
+# Prepare features and target
+train_features <- train_set %>% select(-SalePrice)
+train_target <- train_set$SalePrice
+
+valid_features <- valid_set %>% select(-SalePrice)
+valid_target <- valid_set$SalePrice
+
+# Convert categorical variables to dummy variables for some models
+train_matrix <- model.matrix(SalePrice ~ ., data = train_set)[, -1]
+valid_matrix <- model.matrix(SalePrice ~ ., data = valid_set)[, -1]
+
+# Prepare test data
+# Prepare test data - fix for factor levels issue
+# First, ensure all factor variables in test data have same levels as training data
+factor_cols <- sapply(train_processed, is.factor)
+factor_names <- names(train_processed)[factor_cols]
+
+for (col in factor_names) {
+  if (col %in% names(test_processed) && col != "SalePrice") {
+    # Get levels from training data
+    train_levels <- levels(train_processed[[col]])
+    # Set same levels for test data
+    test_processed[[col]] <- factor(test_processed[[col]], levels = train_levels)
+  }
+}
 
