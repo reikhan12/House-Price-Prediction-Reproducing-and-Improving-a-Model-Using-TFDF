@@ -26,7 +26,7 @@ registerDoParallel(cl)
 set.seed(42)
 
 # Load the dataset
-setwd("C:/Users/User/Desktop/R_R/House-Price-Prediction-Reproducing-and-Improving-a-Model-Using-TFDF")
+#setwd("C:/Users/User/Desktop/R_R/House-Price-Prediction-Reproducing-and-Improving-a-Model-Using-TFDF")
 
 train_data <- read.csv("data/train.csv", stringsAsFactors = FALSE)
 test_data <- read.csv("data/test.csv", stringsAsFactors = FALSE)
