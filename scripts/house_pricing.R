@@ -612,3 +612,33 @@ print(p_xgb_importance)
 
 # Combined feature importance comparison
 grid.arrange(p_rf_importance, p_xgb_importance, ncol = 2)
+
+# 4. Correlation heatmap of top features (additional insight)
+cat("Creating correlation heatmap of top features...\n")
+
+top_features <- c("GrLivArea", "TotalBsmtSF", "X1stFlrSF", "FullBath", 
+                  "TotRmsAbvGrd", "YearBuilt", "YearRemodAdd", "GarageArea", 
+                  "GarageCars", "OverallQual", "SalePrice")
+
+# Select available features
+available_features <- intersect(top_features, names(train_data))
+cor_data <- train_data[, available_features]
+
+# Calculate correlation matrix
+cor_matrix <- cor(cor_data, use = "complete.obs")
+
+# Create correlation plot
+library(reshape2)
+cor_melted <- melt(cor_matrix)
+
+p_corr <- ggplot(cor_melted, aes(Var1, Var2, fill = value)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+                       midpoint = 0, limit = c(-1,1), space = "Lab",
+                       name="Correlation") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
+  ggtitle("Correlation Heatmap of Key Features") +
+  xlab("") + ylab("")
+
+print(p_corr)
