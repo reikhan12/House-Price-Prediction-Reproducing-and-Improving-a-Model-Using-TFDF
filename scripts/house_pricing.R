@@ -288,3 +288,271 @@ test_matrix <- test_matrix[, common_cols]
 # Ensure same column order as training matrix
 test_matrix <- test_matrix[, colnames(train_matrix)[colnames(train_matrix) %in% colnames(test_matrix)]]
 
+# =============================================================================
+# MODEL 1: RANDOM FOREST WITH HYPERPARAMETER TUNING
+# =============================================================================
+
+cat("\n=== Training Random Forest Model ===\n")
+
+# Hyperparameter tuning for Random Forest
+rf_grid <- expand.grid(
+  mtry = c(5, 10, 15, 20),
+  ntree = c(100, 300, 500),
+  nodesize = c(5, 10, 15)
+)
+
+best_rf_rmse <- Inf
+best_rf_params <- NULL
+best_rf_model <- NULL
+
+for (i in 1:nrow(rf_grid)) {
+  cat(sprintf("RF Grid Search: %d/%d\n", i, nrow(rf_grid)))
+  
+  rf_model <- randomForest(
+    x = train_features,
+    y = train_target,
+    mtry = rf_grid$mtry[i],
+    ntree = rf_grid$ntree[i],
+    nodesize = rf_grid$nodesize[i],
+    importance = TRUE
+  )
+  
+  rf_pred <- predict(rf_model, valid_features)
+  rf_rmse <- sqrt(mean((valid_target - rf_pred)^2))
+  
+  if (rf_rmse < best_rf_rmse) {
+    best_rf_rmse <- rf_rmse
+    best_rf_params <- rf_grid[i, ]
+    best_rf_model <- rf_model
+  }
+}
+
+cat("Best RF RMSE:", best_rf_rmse, "\n")
+cat("Best RF Parameters:\n")
+print(best_rf_params)
+
+# =============================================================================
+# MODEL 2: XGBOOST WITH HYPERPARAMETER TUNING
+# =============================================================================
+
+cat("\n=== Training XGBoost Model ===\n")
+
+# Prepare DMatrix for XGBoost
+dtrain <- xgb.DMatrix(data = train_matrix, label = train_target)
+dvalid <- xgb.DMatrix(data = valid_matrix, label = valid_target)
+dtest <- xgb.DMatrix(data = test_matrix)
+
+# Hyperparameter tuning for XGBoost
+xgb_grid <- expand.grid(
+  eta = c(0.01, 0.05, 0.1),
+  max_depth = c(3, 6, 9),
+  subsample = c(0.8, 0.9),
+  colsample_bytree = c(0.8, 0.9)
+)
+
+best_xgb_rmse <- Inf
+best_xgb_params <- NULL
+best_xgb_model <- NULL
+
+for (i in 1:nrow(xgb_grid)) {
+  cat(sprintf("XGBoost Grid Search: %d/%d\n", i, nrow(xgb_grid)))
+  
+  xgb_params <- list(
+    objective = "reg:squarederror",
+    eta = xgb_grid$eta[i],
+    max_depth = xgb_grid$max_depth[i],
+    subsample = xgb_grid$subsample[i],
+    colsample_bytree = xgb_grid$colsample_bytree[i]
+  )
+  
+  xgb_model <- xgb.train(
+    params = xgb_params,
+    data = dtrain,
+    nrounds = 100,
+    watchlist = list(train = dtrain, valid = dvalid),
+    early_stopping_rounds = 10,
+    verbose = 0
+  )
+  
+  xgb_pred <- predict(xgb_model, dvalid)
+  xgb_rmse <- sqrt(mean((valid_target - xgb_pred)^2))
+  
+  if (xgb_rmse < best_xgb_rmse) {
+    best_xgb_rmse <- xgb_rmse
+    best_xgb_params <- xgb_grid[i, ]
+    best_xgb_model <- xgb_model
+  }
+}
+
+cat("Best XGBoost RMSE:", best_xgb_rmse, "\n")
+cat("Best XGBoost Parameters:\n")
+print(best_xgb_params)
+
+# =============================================================================
+# MODEL 3: GRADIENT BOOSTING MACHINE (GBM)
+# =============================================================================
+
+cat("\n=== Training GBM Model ===\n")
+
+# Hyperparameter tuning for GBM
+gbm_grid <- expand.grid(
+  n.trees = c(100, 300, 500),
+  interaction.depth = c(3, 6, 9),
+  shrinkage = c(0.01, 0.05, 0.1),
+  n.minobsinnode = c(10, 20)
+)
+
+best_gbm_rmse <- Inf
+best_gbm_params <- NULL
+best_gbm_model <- NULL
+
+# Sample a subset of grid for faster computation
+set.seed(42)
+gbm_sample <- sample(nrow(gbm_grid), min(15, nrow(gbm_grid)))
+
+for (i in gbm_sample) {
+  cat(sprintf("GBM Grid Search: %d/%d\n", which(gbm_sample == i), length(gbm_sample)))
+  
+  gbm_model <- gbm(
+    SalePrice ~ .,
+    data = train_set,
+    distribution = "gaussian",
+    n.trees = gbm_grid$n.trees[i],
+    interaction.depth = gbm_grid$interaction.depth[i],
+    shrinkage = gbm_grid$shrinkage[i],
+    n.minobsinnode = gbm_grid$n.minobsinnode[i],
+    cv.folds = 5,
+    verbose = FALSE
+  )
+  
+  best_iter <- gbm.perf(gbm_model, method = "cv", plot.it = FALSE)
+  gbm_pred <- predict(gbm_model, valid_set, n.trees = best_iter)
+  gbm_rmse <- sqrt(mean((valid_target - gbm_pred)^2))
+  
+  if (gbm_rmse < best_gbm_rmse) {
+    best_gbm_rmse <- gbm_rmse
+    best_gbm_params <- gbm_grid[i, ]
+    best_gbm_model <- gbm_model
+  }
+}
+
+cat("Best GBM RMSE:", best_gbm_rmse, "\n")
+cat("Best GBM Parameters:\n")
+print(best_gbm_params)
+
+# =============================================================================
+# MODEL 4: HYBRID/ENSEMBLE MODEL
+# =============================================================================
+
+cat("\n=== Creating Hybrid/Ensemble Model ===\n")
+
+# Get predictions from all models on validation set
+rf_valid_pred <- predict(best_rf_model, valid_features)
+xgb_valid_pred <- predict(best_xgb_model, dvalid)
+gbm_valid_pred <- predict(best_gbm_model, valid_set, n.trees = gbm.perf(best_gbm_model, method = "cv", plot.it = FALSE))
+
+# Create ensemble predictions with weighted average
+# Weights based on individual model performance (inverse of RMSE)
+rf_weight <- 1 / best_rf_rmse
+xgb_weight <- 1 / best_xgb_rmse
+gbm_weight <- 1 / best_gbm_rmse
+
+total_weight <- rf_weight + xgb_weight + gbm_weight
+
+rf_weight_norm <- rf_weight / total_weight
+xgb_weight_norm <- xgb_weight / total_weight
+gbm_weight_norm <- gbm_weight / total_weight
+
+ensemble_pred <- (rf_weight_norm * rf_valid_pred + 
+                  xgb_weight_norm * xgb_valid_pred + 
+                  gbm_weight_norm * gbm_valid_pred)
+
+ensemble_rmse <- sqrt(mean((valid_target - ensemble_pred)^2))
+
+cat("Ensemble RMSE:", ensemble_rmse, "\n")
+cat("Ensemble Weights - RF:", round(rf_weight_norm, 3), 
+    "XGB:", round(xgb_weight_norm, 3), 
+    "GBM:", round(gbm_weight_norm, 3), "\n")
+
+# =============================================================================
+# MODEL COMPARISON
+# =============================================================================
+
+cat("\n=== Model Performance Comparison ===\n")
+model_results <- data.frame(
+  Model = c("Random Forest", "XGBoost", "GBM", "Ensemble"),
+  RMSE = c(best_rf_rmse, best_xgb_rmse, best_gbm_rmse, ensemble_rmse),
+  stringsAsFactors = FALSE
+)
+
+model_results <- model_results[order(model_results$RMSE), ]
+print(model_results)
+
+# =============================================================================
+# VISUALIZATION OF TRAINING PROGRESS AND MODEL INSIGHTS
+# =============================================================================
+
+cat("\n=== Creating Model Visualization and Training Insights ===\n")
+
+# 1. Random Forest: Out-of-bag error progression (equivalent to Python's training logs plot)
+cat("Plotting Random Forest OOB Error progression...\n")
+
+# Create a function to extract OOB error progression
+extract_rf_oob <- function(rf_model) {
+  oob_error <- rf_model$mse
+  trees <- 1:length(oob_error)
+  rmse <- sqrt(oob_error)
+  return(data.frame(Trees = trees, RMSE = rmse))
+}
+
+rf_progress <- extract_rf_oob(best_rf_model)
+p_rf_progress <- ggplot(rf_progress, aes(x = Trees, y = RMSE)) +
+  geom_line(color = "blue", size = 1) +
+  theme_minimal() +
+  ggtitle("Random Forest: RMSE vs Number of Trees (OOB)") +
+  xlab("Number of Trees") +
+  ylab("RMSE (Out-of-bag)")
+
+print(p_rf_progress)
+
+# 2. XGBoost: Training progress plot
+cat("Plotting XGBoost training progress...\n")
+
+# Extract training history from XGBoost model
+xgb_eval_log <- best_xgb_model$evaluation_log
+if (!is.null(xgb_eval_log)) {
+  p_xgb_progress <- ggplot(xgb_eval_log, aes(x = iter)) +
+    geom_line(aes(y = train_rmse, color = "Training"), size = 1) +
+    geom_line(aes(y = valid_rmse, color = "Validation"), size = 1) +
+    scale_color_manual(values = c("Training" = "blue", "Validation" = "red")) +
+    theme_minimal() +
+    ggtitle("XGBoost: Training vs Validation RMSE") +
+    xlab("Iteration") +
+    ylab("RMSE") +
+    labs(color = "Dataset")
+  
+  print(p_xgb_progress)
+}
+
+# 3. Model Tree Visualization (equivalent to Python's plot_model_in_colab)
+cat("Creating Random Forest tree visualization...\n")
+
+# Extract first tree structure (simplified representation)
+# Note: R doesn't have direct equivalent to Python's model plotter, so we'll create feature importance plot instead
+rf_tree_importance <- data.frame(
+  Feature = names(best_rf_model$importance[,1]),
+  Importance = best_rf_model$importance[,1]
+) %>%
+  arrange(desc(Importance)) %>%
+  head(15)
+
+p_tree_structure <- ggplot(rf_tree_importance, aes(x = reorder(Feature, Importance), y = Importance)) +
+  geom_col(fill = "forestgreen", alpha = 0.7) +
+  coord_flip() +
+  theme_minimal() +
+  ggtitle("Random Forest: Feature Importance (Tree Structure Insight)") +
+  xlab("Features") +
+  ylab("Mean Decrease in MSE")
+
+print(p_tree_structure)
+
