@@ -642,3 +642,34 @@ p_corr <- ggplot(cor_melted, aes(Var1, Var2, fill = value)) +
   xlab("") + ylab("")
 
 print(p_corr)
+
+# =============================================================================
+# GENERATE PREDICTIONS ON TEST SET
+# =============================================================================
+
+cat("\n=== Generating Test Predictions ===\n")
+
+# Get predictions from all models on test set
+rf_test_pred <- predict(best_rf_model, test_processed)
+xgb_test_pred <- predict(best_xgb_model, dtest)
+gbm_test_pred <- predict(best_gbm_model, test_processed, n.trees = gbm.perf(best_gbm_model, method = "cv", plot.it = FALSE))
+
+# Create ensemble predictions
+ensemble_test_pred <- (rf_weight_norm * rf_test_pred + 
+                       xgb_weight_norm * xgb_test_pred + 
+                       gbm_weight_norm * gbm_test_pred)
+
+# Create submission files for each model
+submissions <- list(
+  "rf_submission.csv" = data.frame(Id = test_ids, SalePrice = rf_test_pred),
+  "xgb_submission.csv" = data.frame(Id = test_ids, SalePrice = xgb_test_pred),
+  "gbm_submission.csv" = data.frame(Id = test_ids, SalePrice = gbm_test_pred),
+  "ensemble_submission.csv" = data.frame(Id = test_ids, SalePrice = ensemble_test_pred)
+)
+
+# Write submission files
+for (filename in names(submissions)) {
+  write.csv(submissions[[filename]], filename, row.names = FALSE)
+  cat("Saved:", filename, "\n")
+}
+
