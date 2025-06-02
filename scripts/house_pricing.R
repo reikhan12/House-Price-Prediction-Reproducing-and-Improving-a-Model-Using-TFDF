@@ -673,3 +673,97 @@ for (filename in names(submissions)) {
   cat("Saved:", filename, "\n")
 }
 
+# =============================================================================
+# RESIDUAL ANALYSIS AND MODEL DIAGNOSTICS
+# =============================================================================
+
+cat("\n=== Residual Analysis and Model Diagnostics ===\n")
+
+# Calculate residuals for ensemble model
+residuals <- valid_target - ensemble_pred
+
+# 1. Residuals vs Fitted Values (equivalent to Python's scatter plot)
+p_resid_fitted <- ggplot(data.frame(Fitted = ensemble_pred, Residuals = residuals), 
+             aes(x = Fitted, y = Residuals)) +
+  geom_point(alpha = 0.6, color = "blue") +
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed", size = 1) +
+  geom_smooth(se = FALSE, color = "green") +
+  theme_minimal() +
+  ggtitle("Ensemble Model: Residuals vs Fitted Values") +
+  xlab("Fitted Values") +
+  ylab("Residuals")
+
+print(p_resid_fitted)
+
+# 2. Distribution of Residuals (equivalent to Python's histogram)
+p_resid_hist <- ggplot(data.frame(Residuals = residuals), aes(x = Residuals)) +
+  geom_histogram(aes(y = ..density..), bins = 30, fill = "skyblue", alpha = 0.7) +
+  geom_density(color = "red", size = 1) +
+  theme_minimal() +
+  ggtitle("Distribution of Residuals") +
+  xlab("Residuals") +
+  ylab("Density")
+
+print(p_resid_hist)
+
+# 3. Q-Q plot for normality check
+p_qq <- ggplot(data.frame(Residuals = residuals), aes(sample = Residuals)) +
+  stat_qq() +
+  stat_qq_line(color = "red") +
+  theme_minimal() +
+  ggtitle("Q-Q Plot of Residuals") +
+  xlab("Theoretical Quantiles") +
+  ylab("Sample Quantiles")
+
+print(p_qq)
+
+# 4. Actual vs Predicted scatter plot
+p_actual_pred <- ggplot(data.frame(Actual = valid_target, Predicted = ensemble_pred), 
+                        aes(x = Actual, y = Predicted)) +
+  geom_point(alpha = 0.6, color = "blue") +
+  geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed", size = 1) +
+  theme_minimal() +
+  ggtitle("Actual vs Predicted Values") +
+  xlab("Actual SalePrice") +
+  ylab("Predicted SalePrice")
+
+print(p_actual_pred)
+
+# Create a 2x2 grid of diagnostic plots
+grid.arrange(p_resid_fitted, p_resid_hist, p_qq, p_actual_pred, ncol = 2)
+
+# Calculate additional metrics
+mae <- mean(abs(residuals))
+r_squared <- 1 - sum(residuals^2) / sum((valid_target - mean(valid_target))^2)
+mape <- mean(abs(residuals/valid_target)) * 100
+
+cat("Additional Metrics for Ensemble Model:\n")
+cat("MAE:", round(mae, 2), "\n")
+cat("R-squared:", round(r_squared, 4), "\n")
+cat("MAPE:", round(mape, 2), "%\n")
+
+# 5. Model Performance Summary Plot
+model_performance <- data.frame(
+  Model = c("Random Forest", "XGBoost", "GBM", "Ensemble"),
+  RMSE = c(best_rf_rmse, best_xgb_rmse, best_gbm_rmse, ensemble_rmse),
+  stringsAsFactors = FALSE
+)
+
+p_model_comp <- ggplot(model_performance, aes(x = reorder(Model, -RMSE), y = RMSE)) +
+  geom_col(fill = c("skyblue", "lightgreen", "orange", "purple"), alpha = 0.8) +
+  geom_text(aes(label = round(RMSE, 0)), vjust = -0.5, size = 4) +
+  theme_minimal() +
+  ggtitle("Model Performance Comparison (RMSE)") +
+  xlab("Models") +
+  ylab("RMSE") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+print(p_model_comp)
+
+# Stop parallel processing
+stopCluster(cl)
+
+cat("\n=== Analysis Complete ===\n")
+cat("Best performing model:", model_results$Model[1], "\n")
+cat("Best RMSE:", round(model_results$RMSE[1], 2), "\n")
+
