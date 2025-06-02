@@ -556,3 +556,59 @@ p_tree_structure <- ggplot(rf_tree_importance, aes(x = reorder(Feature, Importan
 
 print(p_tree_structure)
 
+# =============================================================================
+# FEATURE IMPORTANCE ANALYSIS (Enhanced with more visualizations)
+# =============================================================================
+
+cat("\n=== Feature Importance Analysis ===\n")
+
+# Random Forest Feature Importance (equivalent to Python's NUM_AS_ROOT visualization)
+rf_importance <- importance(best_rf_model)
+rf_imp_df <- data.frame(
+  Feature = rownames(rf_importance),
+  IncMSE = rf_importance[, "%IncMSE"],
+  IncNodePurity = rf_importance[, "IncNodePurity"],
+  stringsAsFactors = FALSE
+) %>%
+  arrange(desc(IncMSE)) %>%
+  head(20)
+
+# Create horizontal bar plot (equivalent to Python's barh plot)
+p_rf_importance <- ggplot(rf_imp_df, aes(x = reorder(Feature, IncMSE), y = IncMSE)) +
+  geom_col(fill = "skyblue", alpha = 0.8) +
+  coord_flip() +
+  theme_minimal() +
+  ggtitle("Random Forest: Feature Importance (%IncMSE)") +
+  xlab("Features") +
+  ylab("%IncMSE") +
+  theme(axis.text.y = element_text(size = 9))
+
+# Add value labels on bars (equivalent to Python's text annotations)
+p_rf_importance <- p_rf_importance +
+  geom_text(aes(label = sprintf("%.4f", IncMSE)), 
+            hjust = -0.1, size = 3)
+
+print(p_rf_importance)
+
+# XGBoost Feature Importance with gain values
+xgb_importance <- xgb.importance(model = best_xgb_model)
+xgb_imp_df <- xgb_importance %>%
+  head(20) %>%
+  select(Feature, Gain) %>%
+  rename(Importance = Gain)
+
+p_xgb_importance <- ggplot(xgb_imp_df, aes(x = reorder(Feature, Importance), y = Importance)) +
+  geom_col(fill = "lightgreen", alpha = 0.8) +
+  coord_flip() +
+  theme_minimal() +
+  ggtitle("XGBoost: Feature Importance (Gain)") +
+  xlab("Features") +
+  ylab("Gain") +
+  theme(axis.text.y = element_text(size = 9)) +
+  geom_text(aes(label = sprintf("%.4f", Importance)), 
+            hjust = -0.1, size = 3)
+
+print(p_xgb_importance)
+
+# Combined feature importance comparison
+grid.arrange(p_rf_importance, p_xgb_importance, ncol = 2)
