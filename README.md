@@ -181,3 +181,16 @@ Below is the visual Git commit tree of the `main` branch, including merges from 
 | * b19d5b8 house_pricing.R
 * 93a7ec4 Merge pull request #5 from BadalovP/Development_Parvin.B
 
+
+
+---
+
+
+## 👥 Contributors
+
+This project was developed collaboratively by:
+
+- Reikhan Gurbanova – Model building, documentation, version control  
+- Maryam Abdulhuseynova – Environment setup, reproducibility, cleaning  
+- Parvin Badalov – Feature engineering, data preprocessing, visualization
+
