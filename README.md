@@ -181,6 +181,8 @@ Below is the visual Git commit tree of the `main` branch, including merges from 
 | * b19d5b8 house_pricing.R
 * 93a7ec4 Merge pull request #5 from BadalovP/Development_Parvin.B
 
+<img width="1470" alt="Screenshot 2025-06-05 at 13 53 22" src="https://github.com/user-attachments/assets/22c6f035-90c7-4c55-94e6-8f7025b0dee9" />
+
 
 
 ---
