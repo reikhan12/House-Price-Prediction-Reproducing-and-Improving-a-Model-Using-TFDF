@@ -74,12 +74,17 @@ We used the [Ames Housing Dataset](https://www.kaggle.com/c/house-prices-advance
 
 ##  Model Performance Summary
 
+
+
 | Model           | RMSE (Validation) |
 |------------------|------------------|
-| Random Forest    | ~  (Tuned)     |
-| XGBoost          | ~  (Tuned)     |
-| GBM              | ~  (Tuned)     |
-| **Ensemble**     | **~  (Best)**  |
+| Random Forest    | 22,486.44        |
+| XGBoost          | 22,013.17        |
+| GBM              | 21,900.43        |
+| **Ensemble**     | **20,761.50**    |
+
+> Ensemble model achieved the best performance by combining the strengths of all individual models.
+
 
 > Exact values available in plots and script output
 
@@ -175,4 +180,19 @@ Below is the visual Git commit tree of the `main` branch, including merges from 
 |\
 | * b19d5b8 house_pricing.R
 * 93a7ec4 Merge pull request #5 from BadalovP/Development_Parvin.B
+
+<img width="1470" alt="Screenshot 2025-06-05 at 13 53 22" src="https://github.com/user-attachments/assets/22c6f035-90c7-4c55-94e6-8f7025b0dee9" />
+
+
+
+---
+
+
+## 👥 Contributors
+
+This project was developed collaboratively by:
+
+- Reikhan Gurbanova – Model building, documentation, version control  
+- Maryam Abdulhuseynova – Environment setup, reproducibility, cleaning  
+- Parvin Badalov – Feature engineering, data preprocessing, visualization
 
