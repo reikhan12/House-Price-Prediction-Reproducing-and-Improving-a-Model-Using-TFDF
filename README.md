@@ -137,3 +137,42 @@ We wanted something practical and well-scoped — a problem where we could explo
 -  Visual model comparisons and diagnostics  
 -  GitHub repo with version control, documentation, and reproducible scripts  
 -  Final reflection in class + short write-up of challenges and learnings
+
+---
+
+## 🌳 Git Commit Tree
+
+Below is the visual Git commit tree of the `main` branch, including merges from feature branches:
+
+* 80cf436 (HEAD -> main, origin/main, origin/HEAD) Merge pull request #15 from reikhan12/maryam-reproducibility
+|\
+| * 9d60ccd Update README.md
+* | 19e4225 Merge pull request #14 from reikhan12/Reikhan
+|\ \
+| * | 38b771c Add files via upload
+* | | 38e995e Merge pull request #13 from reikhan12/Reikhan
+|\| |
+| * | 2df9779 house_pricing.R
+| * | 35e9db6 house_pricing.R
+* | | 7d02672 Merge pull request #12 from reikhan12/Reikhan
+|\| |
+| * | 193fc63 Add files via upload
+|/ /
+* | 4a35fe5 (origin/Reikhan) Removed incorrect submission files from outputs folder
+* | 642f4c0 (Reikhan) Add files via upload
+* | 0b26f3f Merge pull request #11 from reikhan12/Reikhan
+|\ \
+| * | 722bd70 house_pricing.R
+|/ /
+* | dbd8fb6 Merge pull request #10 from BadalovP/Development_Parvin.B
+|\
+| * 7b017d9 Added heatmap
+* | 7d3e31e Merge pull request #9 from BadalovP/Development_Parvin.B
+|\|
+| * 551afd4 Final updates to development branch before merging to main
+| * f60d7c5 Merge remote-tracking branch 'upstream/main'
+* 8a62575 Merge pull request #8 from reikhan12/Reikhan
+|\
+| * b19d5b8 house_pricing.R
+* 93a7ec4 Merge pull request #5 from BadalovP/Development_Parvin.B
+
