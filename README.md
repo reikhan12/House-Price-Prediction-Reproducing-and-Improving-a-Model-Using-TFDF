@@ -74,12 +74,17 @@ We used the [Ames Housing Dataset](https://www.kaggle.com/c/house-prices-advance
 
 ##  Model Performance Summary
 
+
+
 | Model           | RMSE (Validation) |
 |------------------|------------------|
-| Random Forest    | ~  (Tuned)     |
-| XGBoost          | ~  (Tuned)     |
-| GBM              | ~  (Tuned)     |
-| **Ensemble**     | **~  (Best)**  |
+| Random Forest    | 22,486.44        |
+| XGBoost          | 22,013.17        |
+| GBM              | 21,900.43        |
+| **Ensemble**     | **20,761.50**    |
+
+> Ensemble model achieved the best performance by combining the strengths of all individual models.
+
 
 > Exact values available in plots and script output
 
